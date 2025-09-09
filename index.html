@@ -303,19 +303,122 @@
 
           <!-- Calendar Grid -->
           <div class="overflow-auto" style="background-color: ${backgroundColor}">
-            <!-- Week Days Header -->
-            <div class="grid grid-cols-7 border-b border-gray-300" style="background: linear-gradient(to right, ${backgroundColor === '#ffffff' ? '#f5f5f5' : backgroundColor}, ${backgroundColor === '#ffffff' ? '#f0f0f0' : backgroundColor}dd)">
-              ${weekDays.map(day => `
-                <div class="p-4 text-center text-sm font-bold uppercase tracking-widest" style="color: ${textColor}">
-                  ${day}
-                </div>
-              `).join('')}
-            </div>
+            ${viewMode === 'month' ? `
+              <!-- Month View -->
+              <!-- Week Days Header -->
+              <div class="grid grid-cols-7 border-b border-gray-300" style="background: linear-gradient(to right, ${backgroundColor === '#ffffff' ? '#f5f5f5' : backgroundColor}, ${backgroundColor === '#ffffff' ? '#f0f0f0' : backgroundColor}dd)">
+                ${weekDays.map(day => `
+                  <div class="p-4 text-center text-sm font-bold uppercase tracking-widest" style="color: ${textColor}">
+                    ${day}
+                  </div>
+                `).join('')}
+              </div>
 
-            <!-- Calendar Days -->
-            <div class="grid grid-cols-7" style="background-color: ${backgroundColor}">
-              ${calendarGrid}
-            </div>
+              <!-- Calendar Days -->
+              <div class="grid grid-cols-7" style="background-color: ${backgroundColor}">
+                ${calendarGrid}
+              </div>
+            ` : viewMode === 'week' ? `
+              <!-- Week View -->
+              <div class="flex flex-col" style="background-color: ${backgroundColor}">
+                <!-- Week Header -->
+                <div class="grid grid-cols-8 border-b border-gray-300" style="background: linear-gradient(to right, ${backgroundColor === '#ffffff' ? '#f5f5f5' : backgroundColor}, ${backgroundColor === '#ffffff' ? '#f0f0f0' : backgroundColor}dd)">
+                  <div class="p-4"></div>
+                  ${getWeekDays(currentDate).map((day, index) => {
+        const isToday = day.toDateString() === new Date().toDateString();
+        return `
+                      <div class="p-4 text-center">
+                        <div class="text-xs font-bold uppercase tracking-widest" style="color: ${textColor}">
+                          ${day.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </div>
+                        <div class="text-2xl font-black mt-2 ${isToday ? 'w-10 h-10 rounded-full flex items-center justify-center mx-auto' : ''}"
+                             style="color: ${isToday ? backgroundColor : textColor}; background-color: ${isToday ? textColor : 'transparent'}">
+                          ${day.getDate()}
+                        </div>
+                      </div>
+                    `;
+      }).join('')}
+                </div>
+
+                <!-- Week Time Slots -->
+                <div class="flex-1">
+                  ${getHoursArray().map(hour => `
+                    <div class="grid grid-cols-8 border-b border-gray-300 min-h-[70px] hover:bg-gray-50 hover:bg-opacity-50 transition-all">
+                      <div class="p-3 text-sm font-bold border-r border-gray-300" style="color: ${textColor}">
+                        ${formatTime(hour)}
+                      </div>
+                      ${getWeekDays(currentDate).map((day, dayIndex) => {
+        const dayEvents = getEventsForDate(day).filter(event =>
+          event.date.getHours() === hour
+        );
+        return `
+                          <div class="border-r border-gray-300 p-2">
+                            ${dayEvents.map(event => `
+                              <div class="text-xs p-3 rounded-lg text-white font-bold mb-2 cursor-pointer hover:opacity-80 transition-all duration-200 border border-gray-400 shadow-sm transform hover:scale-[1.02]"
+                                   style="background: linear-gradient(135deg, ${event.color}, ${event.color}dd);">
+                                ${event.title}
+                              </div>
+                            `).join('')}
+                          </div>
+                        `;
+      }).join('')}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : `
+              <!-- Day View -->
+              <div class="flex flex-col" style="background-color: ${backgroundColor}">
+                <!-- Day Header -->
+                <div class="p-6 border-b border-gray-300" style="background: linear-gradient(to right, ${backgroundColor === '#ffffff' ? '#f5f5f5' : backgroundColor}, ${backgroundColor === '#ffffff' ? '#f0f0f0' : backgroundColor}dd)">
+                  <div class="text-center">
+                    <div class="text-sm font-bold uppercase tracking-widest" style="color: ${textColor}">
+                      ${currentDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
+                    </div>
+                    <div class="text-6xl font-black mt-2" style="font-stretch: condensed; color: ${textColor}">
+                      ${currentDate.getDate()}
+                    </div>
+                    <div class="text-lg font-bold tracking-wide" style="font-stretch: condensed; letter-spacing: 0.2em; color: ${textColor}">
+                      ${(() => {
+          const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+          return `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+        })()}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Day Time Slots -->
+                <div class="flex-1">
+                  ${getHoursArray().map(hour => {
+          const hourEvents = getEventsForDate(currentDate).filter(event =>
+            event.date.getHours() === hour
+          );
+          return `
+                      <div class="flex border-b border-gray-300 min-h-[90px] hover:bg-gray-50 hover:bg-opacity-50 transition-all">
+                        <div class="w-24 p-4 text-sm font-bold border-r border-gray-300" style="color: ${textColor}">
+                          ${formatTime(hour)}
+                        </div>
+                        <div class="flex-1 p-3">
+                          ${hourEvents.map(event => `
+                            <div class="p-4 rounded-xl text-white font-bold mb-3 cursor-pointer hover:opacity-80 transition-all duration-200 border border-gray-400 shadow-lg transform hover:scale-[1.02]"
+                                 style="background: linear-gradient(135deg, ${event.color}, ${event.color}dd);">
+                              <div class="font-black text-lg">${event.title}</div>
+                              <div class="text-sm opacity-90 font-bold">
+                                ${event.date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          })}
+                              </div>
+                            </div>
+                          `).join('')}
+                        </div>
+                      </div>
+                    `;
+        }).join('')}
+                </div>
+              </div>
+            `}
           </div>
 
           <!-- Add Button -->
